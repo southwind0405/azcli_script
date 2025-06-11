@@ -25,8 +25,10 @@ This project provides a modular and secure set of Bash scripts to automate the d
 ## 🚀 Usage
 
 ### Option 1: Interactive Mode
-
 ```bash
 ./script.sh
-
-
+```
+###  Option 2: Command-Line Mode
+```bash
+./script.sh -n myvm -g mygroup -l japaneast -i $UBUNTU_22 -N "/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.Network/networkSecurityGroups/xxx"
+```
