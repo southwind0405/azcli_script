@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Dev Environment - Tenant A",
+    "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "subscriptionId": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+    "description": "Development environment for project X, in Tenant A."
+  },
+  {
+    "name": "Prod Environment - Tenant B",
+    "tenantId": "zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz",
+    "subscriptionId": "wwwwwwww-wwww-wwww-wwww-wwwwwwwwwwww",
+    "description": "Production environment for project Y, in Tenant B."
+  },
+  {
+    "name": "My Personal Sandbox - Tenant A",
+    "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "subscriptionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "description": "My personal playground, also in Tenant A."
+  }
+]
