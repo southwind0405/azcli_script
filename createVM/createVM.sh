@@ -127,17 +127,7 @@ fi
 
 # --- OS Image Selection ---
 if [[ -z "${OSIMAGE:-}" ]]; then
-    echo ""
-    echo "--- Select OS Image ---"
-    select opt in "Ubuntu 22.04" "Debian 12" "Oracle Linux 9.5" "Windows Server 2022"; do
-        case $REPLY in
-            1) OSIMAGE=$UBUNTU_22; break ;;
-            2) OSIMAGE=$DEBIAN_12; break ;;
-            3) OSIMAGE=$ORACLE_95; break ;;
-            4) OSIMAGE=$WIN_2022; break ;;
-            *) echo "Invalid selection. Please choose a number from 1 to 4." ;;
-        esac
-    done
+    select_os_image # Call the new function to handle OS image selection
 fi
 echo "Selected OS Image: $OSIMAGE"
 

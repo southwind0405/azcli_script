@@ -1,5 +1,110 @@
 #!/usr/bin/env bash
 
+# Function: Prompts the user to select an OS image from a multi-level menu.
+# Sets the OSIMAGE global variable upon successful selection.
+select_os_image() {
+  echo ""
+  echo "--- Select OS Category ---"
+  select category_opt in "Linux" "Windows"; do
+      case $REPLY in
+          1) # Linux
+              echo ""
+              echo "--- Select Linux Distribution ---"
+              select linux_distro_opt in "Ubuntu" "Debian" "Oracle Linux" "RedHat" "CentOS"; do
+                  case $REPLY in
+                      1) # Ubuntu
+                          echo ""
+                          echo "--- Select Ubuntu Version ---"
+                          select ubuntu_version_opt in "Ubuntu 16.04" "Ubuntu 18.04" "Ubuntu 20.04" "Ubuntu 22.04" "Ubuntu 24.04"; do
+                              case $REPLY in
+                                  1) OSIMAGE=$UBUNTU_16; break 2 ;;
+                                  2) OSIMAGE=$UBUNTU_18; break 2 ;;
+                                  3) OSIMAGE=$UBUNTU_20; break 2 ;;
+                                  4) OSIMAGE=$UBUNTU_22; break 2 ;;
+                                  5) OSIMAGE=$UBUNTU_24; break 2 ;;
+                                  *) echo "Invalid selection. Please choose a number from 1 to 5." ;;
+                              esac
+                          done
+                          break ;; # Break from linux_distro_opt select loop
+                      2) # Debian
+                          echo ""
+                          echo "--- Select Debian Version ---"
+                          select debian_version_opt in "Debian 10" "Debian 11" "Debian 12"; do
+                              case $REPLY in
+                                  1) OSIMAGE=$DEBIAN_10; break 2 ;;
+                                  2) OSIMAGE=$DEBIAN_11; break 2 ;;
+                                  3) OSIMAGE=$DEBIAN_12; break 2 ;;
+                                  *) echo "Invalid selection. Please choose a number from 1 to 3." ;;
+                              esac
+                          done
+                          break ;; # Break from linux_distro_opt select loop
+                      3) # Oracle Linux
+                          echo ""
+                          echo "--- Select Oracle Linux Version ---"
+                          select oracle_version_opt in "Oracle Linux 7.9" "Oracle Linux 8.9 LVM" "Oracle Linux 9 LVM" "Oracle Linux 9.5 LVM"; do
+                              case $REPLY in
+                                  1) OSIMAGE=$ORACLE_79; break 2 ;;
+                                  2) OSIMAGE=$ORACLE_89_LVM; break 2 ;;
+                                  3) OSIMAGE=$ORACLE_9_LVM; break 2 ;;
+                                  4) OSIMAGE=$ORACLE_95_LVM; break 2 ;;
+                                  *) echo "Invalid selection. Please choose a number from 1 to 4." ;;
+                              esac
+                          done
+                          break ;; # Break from linux_distro_opt select loop
+                      4) # RedHat
+                          echo ""
+                          echo "--- Select RedHat Version ---"
+                          select rhel_version_opt in "RHEL 7.9" "RHEL 7 LVM" "RHEL 8" "RHEL 8 LVM" "RHEL 8.10" "RHEL 9 LVM" "RHEL 9.6" "RHEL 10 LVM" "RHEL 10.0"; do
+                              case $REPLY in
+                                  1) OSIMAGE=$RHEL_79; break 2 ;;
+                                  2) OSIMAGE=$RHEL_7_LVM; break 2 ;;
+                                  3) OSIMAGE=$RHEL_8; break 2 ;;
+                                  4) OSIMAGE=$RHEL_8_LVM; break 2 ;;
+                                  5) OSIMAGE=$RHEL_810; break 2 ;;
+                                  6) OSIMAGE=$RHEL_9_LVM; break 2 ;;
+                                  7) OSIMAGE=$RHEL_96; break 2 ;;
+                                  8) OSIMAGE=$RHEL_10_LVM; break 2 ;;
+                                  9) OSIMAGE=$RHEL_100; break 2 ;;
+                                  *) echo "Invalid selection. Please choose a number from 1 to 9." ;;
+                              esac
+                          done
+                          break ;; # Break from linux_distro_opt select loop
+                      5) # CentOS
+                          echo ""
+                          echo "--- Select CentOS Version ---"
+                          select centos_version_opt in "CentOS 7.9" "CentOS 7 LVM" "CentOS 8.5" "CentOS 8 LVM"; do
+                              case $REPLY in
+                                  1) OSIMAGE=$CENTOS_79; break 2 ;;
+                                  2) OSIMAGE=$CENTOS_7_LVM; break 2 ;;
+                                  3) OSIMAGE=$CENTOS_85; break 2 ;;
+                                  4) OSIMAGE=$CENTOS_8_LVM; break 2 ;;
+                                  *) echo "Invalid selection. Please choose a number from 1 to 4." ;;
+                              esac
+                          done
+                          break ;; # Break from linux_distro_opt select loop
+                      *) echo "Invalid selection. Please choose a number from 1 to 5." ;;
+                  esac
+              done
+              break ;; # Break from category_opt select loop
+          2) # Windows
+              echo ""
+              echo "--- Select Windows Server Version ---"
+              select windows_version_opt in "Windows Server 2016" "Windows Server 2019" "Windows Server 2022" "Windows Server 2025"; do
+                  case $REPLY in
+                      1) OSIMAGE=$WIN_2016; break 2 ;;
+                      2) OSIMAGE=$WIN_2019; break 2 ;;
+                      3) OSIMAGE=$WIN_2022; break 2 ;;
+                      4) OSIMAGE=$WIN_2025; break 2 ;;
+                      *) echo "Invalid selection. Please choose a number from 1 to 4." ;;
+                  esac
+              done
+              break ;; # Break from category_opt select loop
+          *) echo "Invalid selection. Please choose a number from 1 to 2." ;;
+      esac
+  done
+}
+
+
 # Function: Ensure a resource group exists, or create it if it doesn't.
 # Arguments:
 #   $1: Resource group name
@@ -81,8 +186,6 @@ create_vm() {
     --subnet "${subnet_name}" \
     --nsg "${nsg_name}" \
     --enable-agent true \
-    --enable-auto-update true \
-    --patch-mode AutomaticByPlatform \
     --output none || { echo "Error creating VM."; return 1; }
 }
 
