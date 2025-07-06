@@ -70,20 +70,29 @@ fi
 
 echo "" # Add a blank line for better readability
 
-# Prompt for parameters with defaults
-read -p "Enter Resource Group name (default: ${DEFAULT_RGNAME}): " user_rgname
-RGNAME=${user_rgname:-$DEFAULT_RGNAME}
+# Only ask for RG name if it wasn't provided via the -g flag
+if [[ -z "${RGNAME:-}" ]]; then
+    read -p "Enter Resource Group name (default: ${DEFAULT_RGNAME}): " user_rgname
+    RGNAME=${user_rgname:-$DEFAULT_RGNAME}
+fi
 
-read -p "Enter location (default: ${DEFAULT_LOCATION}): " user_location
-LOCATION=${user_location:-$DEFAULT_LOCATION}
+# Only ask for location if it wasn't provided via the -l flag
+if [[ -z "${LOCATION:-}" ]]; then
+    read -p "Enter location (default: ${DEFAULT_LOCATION}): " user_location
+    LOCATION=${user_location:-$DEFAULT_LOCATION}
+fi
 
+# Only ask for VM name if it wasn't provided via the -n flag
 if [[ -z "${VMNAME:-}" ]]; then
     read -p "Enter VM name: " VMNAME
     [[ -z "$VMNAME" ]] && { echo "Error: VM name cannot be empty."; exit 1; }
 fi
 
-read -p "Enter VM size (default: ${DEFAULT_VM_SIZE}): " user_vmsize
-VMSIZE=${user_vmsize:-$DEFAULT_VM_SIZE}
+# Only ask for VM size if it wasn't provided via the -z flag
+if [[ -z "${VMSIZE:-}" ]]; then
+    read -p "Enter VM size (default: ${DEFAULT_VM_SIZE}): " user_vmsize
+    VMSIZE=${user_vmsize:-$DEFAULT_VM_SIZE}
+fi
 
 # Set defaults for VNet and Subnet based on RG name
 VNETNAME=${VNETNAME:-"${RGNAME}Vnet"}
