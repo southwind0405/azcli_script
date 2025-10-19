@@ -26,3 +26,9 @@ az deployment group create --resource-group "<輸入resource group name>" --temp
 - 要在建立的VM的NIC上設定custom dns: ["vm的private IP","127.0.0.1]
 - 要在建立的subnet上設定custom dns: "vm的private IP"
 
+
+# 使用shell腳本建1個Windows VM作client加入domain
+## 檔案
+- addClientVM.sh
+## 執行方式
+執行addClientVM.sh產生VM
