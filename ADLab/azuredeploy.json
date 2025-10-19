@@ -1,0 +1,254 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "japaneast",
+      "metadata": {
+        "description": "指定資源部署的地理位置"
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "ADLabVnet",
+      "metadata": {
+        "description": "虛擬網路的名稱"
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.10.0.0/16",
+      "metadata": {
+        "description": "虛擬網路的位址空間"
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "ADlabVent-Sub1",
+      "metadata": {
+        "description": "子網路的名稱"
+      }
+    },
+    "subnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.10.10.0/24",
+      "metadata": {
+        "description": "子網路的位址空間"
+      }
+    },
+    "nsgName": {
+      "type": "string",
+      "defaultValue": "NSG-DomainControllers",
+      "metadata": {
+        "description": "網路安全性群組 (NSG) 的名稱"
+      }
+    },
+    "dc1Name": {
+      "type": "string",
+      "defaultValue": "AZDC01",
+      "metadata": {
+        "description": "第一台 Domain Controller 的 VM 名稱"
+      }
+    },
+    "dc1PrivateIp": {
+      "type": "string",
+      "defaultValue": "10.10.10.11",
+      "metadata": {
+        "description": "第一台 Domain Controller 的私有 IP"
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2ls_v5",
+      "metadata": {
+        "description": "VM 的大小"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "azuser",
+      "metadata": {
+        "description": "VM 的系統管理員帳號"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "VM 的系統管理員密碼"
+      }
+    },
+    "powershellScriptUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "包含 adds_dep.ps1 腳本的公開 URL"
+      }
+    }
+  },
+  "resources": [
+    // 1. 建立網路安全性群組 (NSG) 並設定 RDP 規則
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('nsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "PermitRDP",
+            "properties": {
+              "priority": 1000,
+              "access": "Allow",
+              "direction": "Inbound",
+              "protocol": "Tcp",
+              "sourceAddressPrefixes": [
+                "4.192.0.0/12",
+                "167.220.0.0/16",
+                "114.32.184.200"
+              ],
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "3389"
+            }
+          }
+        ]
+      }
+    },
+    // 2. 建立虛擬網路和子網路
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('subnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnetAddressPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+	// --- 新增 Public IP 資源 ---
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-05-01",
+      "name": "[concat(parameters('dc1Name'), '-pip')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic",
+        "dnsSettings": {
+          "domainNameLabel": "[toLower(parameters('dc1Name'))]"
+        }
+      }
+    },
+    // 3. 為 DC1 建立網路介面卡 (NIC), 關聯 Public IP 並再次關聯 NSG
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-05-01",
+      "name": "[concat(parameters('dc1Name'), '-nic')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('dc1Name'), '-pip'))]"
+      ],
+      "properties": {
+        // --- 新增：將 NSG 直接關聯到 NIC ---
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
+        },
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[parameters('dc1PrivateIp')]",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
+              },
+              // --- 新增：將 Public IP 關聯到 NIC 的 IP 設定 ---
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(parameters('dc1Name'), '-pip'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    // 4. 建立 DC1 虛擬機
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-03-01",
+      "name": "[parameters('dc1Name')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('dc1Name'), '-nic'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('dc1Name')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2022-datacenter-g2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('dc1Name'), '-nic'))]"
+            }
+          ]
+        }
+      }
+    },
+    // 5. 在 DC1 上執行 Custom Script Extension 來安裝 AD DS
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[concat(parameters('dc1Name'), '/InstallADDS')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('dc1Name'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "[parameters('powershellScriptUrl')]"
+          ]
+        },
+        "protectedSettings": {
+          "commandToExecute": "powershell.exe -ExecutionPolicy Unrestricted -File adds_dep.ps1"
+        }
+      }
+    }
+  ]
+}
